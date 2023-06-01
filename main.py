@@ -1,5 +1,5 @@
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
 
 # Set up logging
@@ -82,8 +82,8 @@ def main():
     # Register handlers
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("track", track))
-    dispatcher.add_handler(MessageHandler(None, new_chat_member, filters=Update.message.new_chat_members))
-    dispatcher.add_handler(MessageHandler(None, username_change, filters=~Filters.command))
+    dispatcher.add_handler(MessageHandler(None, new_chat_member, filters=Filters.status_update.new_chat_members))
+    dispatcher.add_handler(MessageHandler(None, username_change, filters=Filters.user(username=True)))
     dispatcher.add_handler(MessageHandler(None, echo_all))
 
     # Log errors
