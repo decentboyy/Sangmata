@@ -1,5 +1,6 @@
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
-import telebot
 
 # Set up logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -10,20 +11,15 @@ logger = logging.getLogger(__name__)
 tracked_users = {}
 
 
-bot = telebot.TeleBot("1719065252:AAH0y8WEkXrVdvH1ShG51PkC2SZEtLXVU40")
-
-
-@bot.message_handler(commands=['start'])
-def start(message):
+def start(update, context):
     """Handler for the /start command."""
-    bot.reply_to(message, "Hello! I will track name and username changes for you. "
-                          "Add me to a group and give me admin rights to start tracking.")
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Hello! I will track name and username changes for you. "
+                                                                    "Add me to a group and give me admin rights to start tracking.")
 
 
-@bot.message_handler(commands=['track'])
-def track(message):
+def track(update, context):
     """Handler for tracking name and username changes."""
-    user = message.from_user
+    user = update.effective_user
 
     if user.id in tracked_users:
         tracked_users[user.id]['name'] = user.full_name
@@ -34,13 +30,12 @@ def track(message):
             'username': user.username
         }
 
-    bot.reply_to(message, "You have been added to the tracking list.")
+    context.bot.send_message(chat_id=update.effective_chat.id, text="You have been added to the tracking list.")
 
 
-@bot.message_handler(content_types=['new_chat_members'])
-def new_chat_member(message):
+def new_chat_member(update, context):
     """Handler for new chat members."""
-    user = message.new_chat_member
+    user = update.message.new_chat_members[0]
 
     if user.id in tracked_users and user.full_name != tracked_users[user.id]['name']:
         text = f"🔔 Name Change Alert! 🔔\n\n"
@@ -48,37 +43,58 @@ def new_chat_member(message):
         text += f"Old Name: {tracked_users[user.id]['name']}\n"
         text += f"New Name: {user.full_name}"
 
-        bot.reply_to(message, text)
+        context.bot.send_message(chat_id=update.effective_chat.id, text=text)
         tracked_users[user.id]['name'] = user.full_name
 
 
-@bot.message_handler(func=lambda message: message.entities and any(entity.type in ['mention', 'text_mention'] for entity in message.entities))
-def username_change(message):
+def username_change(update, context):
     """Handler for username changes."""
-    user = message.from_user
-    user_id = user.id
+    user = update.effective_user
 
-    if user_id in tracked_users and user.username != tracked_users[user_id]['username']:
+    if user.id in tracked_users and user.username != tracked_users[user.id]['username']:
         text = f"🔔 Username Change Alert! 🔔\n\n"
-        text += f"User: {user.full_name} ({user_id})\n"
-        text += f"Old Username: {tracked_users[user_id]['username']}\n"
+        text += f"User: {user.full_name} ({user.id})\n"
+        text += f"Old Username: {tracked_users[user.id]['username']}\n"
         text += f"New Username: {user.username}"
 
-        bot.reply_to(message, text)
-        tracked_users[user_id]['username'] = user.username
+        context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+        tracked_users[user.id]['username'] = user.username
 
 
-@bot.message_handler(func=lambda message: True)
-def echo_all(message):
+def echo_all(update, context):
     """Handler for other message types."""
-    bot.reply_to(message, "I'm sorry, I only track name and username changes.")
+    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm sorry, I only track name and username changes.")
 
 
-@bot.message_handler(func=lambda message: True)
-def error_handler(message):
+def error_handler(update, context):
     """Handler for errors."""
-    logger.warning(f"Update {message} caused an error.")
+    logger.warning(f"Update {update} caused an error.")
 
 
-# Start the bot
-bot.polling()
+def main():
+    """Main function to run the bot."""
+    # Create the Updater and pass your bot token
+    updater = Updater(token="1719065252:AAH0y8WEkXrVdvH1ShG51PkC2SZEtLXVU40", use_context=True)
+
+    # Get the dispatcher to register handlers
+    dispatcher = updater.dispatcher
+
+    # Register handlers
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("track", track))
+    dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_chat_member))
+    dispatcher.add_handler(MessageHandler(Filters.user, username_change))
+    dispatcher.add_handler(MessageHandler(Filters.all, echo_all))
+
+    # Log errors
+    dispatcher.add_error_handler(error_handler)
+
+    # Start the bot
+    updater.start_polling()
+
+    # Run the bot until Ctrl+C is pressed
+    updater.idle()
+
+
+if __name__ == '__main__':
+    main()
