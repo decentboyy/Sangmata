@@ -74,7 +74,7 @@ def error_handler(update, context):
 def main():
     """Main function to run the bot."""
     # Create the Updater and pass your bot token
-    updater = Updater(token="1719065252:AAH0y8WEkXrVdvH1ShG51PkC2SZEtLXVU40", use_context=True)
+    updater = Updater(bot_token="1719065252:AAH0y8WEkXrVdvH1ShG51PkC2SZEtLXVU40", use_context=True)
 
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
@@ -83,7 +83,7 @@ def main():
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("track", track))
     dispatcher.add_handler(MessageHandler(None, new_chat_member, filters=Update.message.new_chat_members))
-    dispatcher.add_handler(MessageHandler(None, username_change, filters=Update.message & (~Filters.command)))
+    dispatcher.add_handler(MessageHandler(None, username_change, filters=~Filters.command))
     dispatcher.add_handler(MessageHandler(None, echo_all))
 
     # Log errors
