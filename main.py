@@ -71,7 +71,7 @@ def error(update: Update, context) -> None:
 def main() -> None:
     """Start the bot."""
     # Set up the Telegram Bot
-    updater = Updater("YOUR_BOT_TOKEN")
+    updater = Updater("1719065252:AAH0y8WEkXrVdvH1ShG51PkC2SZEtLXVU40")
 
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
